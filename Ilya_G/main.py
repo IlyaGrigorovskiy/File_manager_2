@@ -5,6 +5,7 @@ import datetime
 from idlelib.tooltip import Hovertip
 import shutil
 
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -183,37 +184,45 @@ class App(tk.Tk):
             for key in self.ful_path_tree_dict:
                 if key not in self.list_tree:
                     self.tree.insert("", tk.END, values=(key, timestamp_date, size_file))   # Записываем атрибуты в Treeview
-                else:
-                    print("Файл уже добавлен")
 
         self.treeview_sort_column()
 
     # Функция, которая добавляет выбранные данные в список на копирование
     def Add_files_to_tree(self):
+        files = [] # список файлов для добавления
+        slct_files =[] # список всех выбранных файлов
         for item_iid in self.tree_left.selection():
-            parent_iid = self.tree_left.parent(item_iid)
-            paren_iid_2 = self.tree_left.parent(parent_iid)
-            self.micromine_path = os.path.join(self.network_path, self.tree_left.item(paren_iid_2)['text'],
-                                               self.tree_left.item(parent_iid)['text'],
-                                               self.tree_left.item(item_iid)['text'])
-            self.read_files_attributes(self.micromine_path)
+         value = self.tree_left.item(item_iid)
+         slct_files.append (value['text']) # записываем имена выделенных файлов в список
+           # r=корень, d=папки, f = файлы
+           # если выделен файл
+         for r, d, f in os.walk(self.network_path):
+              for file in f:
+                  if file in slct_files: # выбираем только выделенные файлы
+                     files.append(os.path.join(r, file))# записываем пути всех файлов в сетевой папке в список
+                     for f in files:
+                        self.read_files_attributes(f)
+            # если выделена папка
+              for folder in d:
+                  if folder in slct_files: # выбираем только выделенную папку
+                      fpath = os.path.join(r, folder) #  путь к выделенной папке
+                      for r, d, f in os.walk(fpath):
+                          for file in f:
+                                files.append(os.path.join(r, file))# записываем пути всех файлов в сетевой папке в список
+                                for f in files:
+                                  self.read_files_attributes(f)
 
     # Функция, которая добавляет все данные в список на копирование
     def Add_All_files_to_tree(self):
-        for item_iid_1 in self.tree_left.get_children():  # получаем элементы 1 уровня
-            item_iid_2 = self.tree_left.get_children(item_iid_1)  # получаем элементы 2 уровня
-            item_iid_3 = self.tree_left.get_children(item_iid_2)  # получаем элементы 3 уровня
-            item_tup = (item_iid_1,)
-            item_tup_2 = item_tup + item_iid_2 + item_iid_3  # получаем кортеж из всех элементов дерева
-            for item_iid in item_tup_2:
-                parent_iid = self.tree_left.parent(item_iid)
-                paren_iid_2 = self.tree_left.parent(parent_iid)
-                self.micromine_path = os.path.join(self.network_path, self.tree_left.item(paren_iid_2)['text'],
-                                                   self.tree_left.item(parent_iid)['text'],
-                                                   self.tree_left.item(item_iid)['text'])
-                self.read_files_attributes(self.micromine_path)
+        files = [] # список всех файлов
+        # r=корень, d=папки, f = файлы
+        for r, d, f in os.walk(self.network_path):
+          for file in f:
+             files.append(os.path.join(r, file)) # записываем пути всех файлов в сетевой папке в список
+        for f in files:
+          self.read_files_attributes(f)
 
-    #Функция сортировки Treeview по расширению
+    # Функция сортировки Treeview по расширению
     def treeview_sort_column(self):
         rows = [(self.tree.set(item, "#1"), item) for item in self.tree.get_children('')]
         i = sorted(rows, key=lambda x: x[0].split(".")[-1])
@@ -231,10 +240,8 @@ class App(tk.Tk):
         for item in self.tree.selection():
             file_del = self.tree.set(item, "#1")
             self.ful_path_tree_dict.pop(file_del)
-            print(self.ful_path_tree_dict)
+
             self.tree.delete(item)
-
-
 
 
     # Функция копирования данных из сети
@@ -242,34 +249,25 @@ class App(tk.Tk):
         if self.var.get() == 1:
             shutil.rmtree(self.path_project)  # Удаляем всю директорию из проекта
             shutil.copytree(self.network_path, self.path_project,
-                            ignore=shutil.ignore_patterns(".*"), dirs_exist_ok=True)
-            for values in self.ful_path_tree_dict.values():
-
-                x = self.path_project
-                print(self.network_path)
-                print(self.path_project)
-                #print(os.path.join(self.path_project,))
-                #shutil.copy(values,)
+                            ignore=self.ignor_copy(), dirs_exist_ok=True)
             print("Данные успешно скопированы!")
+
         else:
             print("Данные не загружены!")
 
+
+    #Функция игнора файлов
     def ignor_copy(self):
-        all_files_network = []
+        def _ignore(path, names):
+            ignored_names = []
 
-        all_files_tree = []
-        for root, dirs, files in os.walk(self.network_path, topdown=False):
-            for name in files:
-                all_files_network.append((os.path.join(root, name)))
+            for name in names:
+                if name in self.ful_path_tree_dict.keys():
+                    ignored_names.append(name)
+            return set(ignored_names)
 
-        for volumes in self.ful_path_tree_dict.values():
-            all_files_tree.append(volumes)
+        return _ignore
 
-        ignored_names = set(all_files_network).difference(all_files_tree)
-
-        
-
-        return ignored_names
 
 
 
