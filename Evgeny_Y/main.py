@@ -48,12 +48,12 @@ class App(tk.Tk):
         # Создаем кнопки со стрелками впарво и влево
         self.img_right = tk.PhotoImage(file="right.png")
         self.btn_right = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right, 
-                                      command=self.Add_All_files_to_tree)
+                                      command=self.add_all_files_to_tree)
                                  
         self.btn_right.place(x=575, y=220)
         self.img_right_litle = tk.PhotoImage(file="right_litle.png")
         self.btn_right_litle = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right_litle, 
-                                      command=self.Add_files_to_tree)
+                                      command=self.add_files_to_tree)
         self.btn_right_litle.place(x=575, y=280)
 
 
@@ -156,26 +156,41 @@ class App(tk.Tk):
             self.populate_node(item, self.abspath) # Добавляем существующие вложенные файлы
 
     # Функция, которая добавляет выбранные данные в список на копирование
-    def Add_files_to_tree(self):
+    def add_files_to_tree(self):
+        files = [] #список файлов для добавления
+        slct_files =[] #список всех выбранных файлов
         for item_iid in self.tree_left.selection():
-            parent_iid = self.tree_left.parent(item_iid)
-            paren_iid_2 = self.tree_left.parent(parent_iid)
-            self.micromine_path = os.path.join(self.network_path, self.tree_left.item(paren_iid_2)['text'], self.tree_left.item(parent_iid)['text'], self.tree_left.item(item_iid)['text'])
-            self.read_files_attributes(self.micromine_path)
+         value = self.tree_left.item(item_iid)
+         slct_files.append (value['text']) #записываем имена выделенных файлов в список
+           # r=корень, d=папки, f = файлы
+           #если выделен файл
+         for r, d, f in os.walk(self.network_path):
+              for file in f:
+                  if file in slct_files: #выбираем только выделенные файлы
+                     files.append(os.path.join(r, file))#записываем пути всех файлов в сетевой папке в список
+                     for f in files:
+                        self.read_files_attributes(f)
+            #если выделена папка
+              for folder in d: 
+                  if folder in slct_files: #выбираем только выделенную папку
+                      fpath = os.path.join(r, folder) #задаем путь к выделенной папке
+                      for r, d, f in os.walk(fpath):
+                          for file in f:
+                                files.append(os.path.join(r, file))#записываем пути всех файлов в сетевой папке в список   
+                                for f in files:
+                                  self.read_files_attributes(f)
+    
     
 # Функция, которая добавляет все данные в список на копирование
-    def Add_All_files_to_tree(self):
-        for item_iid_1 in self.tree_left.get_children(): #получаем элементы 1 уровня     
-            item_iid_2 = self.tree_left.get_children(item_iid_1) #получаем элементы 2 уровня
-            item_iid_3 = self.tree_left.get_children(item_iid_2) #получаем элементы 3 уровня
-            item_tup = (item_iid_1,)
-            item_tup_2 = item_tup + item_iid_2 + item_iid_3 #получаем кортеж из всех элементов дерева
-            for item_iid in item_tup_2:
-                parent_iid = self.tree_left.parent(item_iid)
-                paren_iid_2 = self.tree_left.parent(parent_iid)
-                self.micromine_path = os.path.join(self.network_path, self.tree_left.item(paren_iid_2)['text'], self.tree_left.item(parent_iid)['text'], self.tree_left.item(item_iid)['text'])
-                self.read_files_attributes(self.micromine_path)
-
+    def add_all_files_to_tree(self):
+     files = [] #список всех файлов
+     # r=корень, d=папки, f = файлы
+     for r, d, f in os.walk(self.network_path): 
+          for file in f:
+             files.append(os.path.join(r, file))#записываем пути всех файлов в сетевой папке в список
+     for f in files:
+          self.read_files_attributes(f)
+    
        
     def read_files_attributes(self, path_file):
         list_tree =[]
