@@ -1,11 +1,11 @@
-
-import tkinter as tk
-from tkinter.constants import COMMAND
+﻿import tkinter as tk
+from tkinter import filedialog
 import tkinter.ttk as ttk
 import os
 import datetime
 from idlelib.tooltip import Hovertip
 import shutil
+
 
 class App(tk.Tk):
     def __init__(self):
@@ -16,6 +16,13 @@ class App(tk.Tk):
         self.mycolor_3 = '#%02x%02x%02x' % (253, 253, 254)  # Белый
         self.mycolor_4 = '#%02x%02x%02x' % (87, 53, 114)  # Темно фиалетовый
         self.network_path = r"C:\Cетевая папка"  # Указываем путь проекта
+        self.path_project = r"C:\LearnPyton\file manager\Cетевая папка"
+        self.ful_path_tree_dict = {}
+        self.create_main_window()
+        self.create_buttons()
+        self.create_right_tree()
+        self.create_left_tree()
+
     # Главное окно
     def create_main_window(self):
         self.title("File manager")  # меняем заголов программы
@@ -47,13 +54,13 @@ class App(tk.Tk):
     def create_buttons(self):
         # Создаем кнопки со стрелками впарво и влево
         self.img_right = tk.PhotoImage(file="right.png")
-        self.btn_right = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right, 
-                                      command=self.add_all_files_to_tree)
-                                 
+        self.btn_right = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right,
+                                   command=self.Add_All_files_to_tree)
+
         self.btn_right.place(x=575, y=220)
         self.img_right_litle = tk.PhotoImage(file="right_litle.png")
-        self.btn_right_litle = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right_litle, 
-                                      command=self.add_files_to_tree)
+        self.btn_right_litle = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right_litle,
+                                         command=self.Add_files_to_tree)
         self.btn_right_litle.place(x=575, y=280)
 
 
@@ -74,14 +81,36 @@ class App(tk.Tk):
         self.btn_Download.place(x=1090, y=5)
         Hovertip(self.btn_Download, "Функция загрузки данных в Майкромайн.", hover_delay=300)
 
-        # Создаем кнопку загрузки данных в Майкромайн
+        # Создаем кнопу выбора сетевой папки
+        
+        #кнопка
+        self.img_folder = tk.PhotoImage(file="folder.png")
+        self.img_folder_small = self.img_folder.subsample(2,2)
+        self.btn_network_path = tk.Button( text = "Открыть...", width = 80, bg=self.mycolor_1, height= 13, image= self.img_folder_small, compound= "left",
+                                    command=self.select_network_folder)
+        self.btn_network_path.place(x=245, y=50)
+        #строка пути
+        self.lbl_network_path = tk.Label(width= 30, text = self.network_path, anchor= tk.W, justify="left")
+        self.lbl_network_path.place(x=20, y=50)
+        #заголовок
+        self.label_network_title = tk.Label(text= "Сетевая папка:" , bg=self.mycolor_2)
+        self.label_network_title.place(x=18, y=25)
 
-        self.img_download_BM = tk.PhotoImage(file="download_BM.png")
-        self.btn_download_BM = tk.Button(self.group_toolbar, height=60, width=70, bg=self.mycolor_1,
-                                      image=self.img_download_BM, text = "Загрузка БМ")
-        self.btn_download_BM.place(x=10, y=5)
-        Hovertip(self.btn_download_BM, "Функция загрузки БМ в сеть.", hover_delay=300)
-
+    #Выбираем сетевую папку
+    def select_network_folder(self):
+        #Открываем окно выбора папки
+        self.folder = filedialog.askdirectory()
+        self.network_path = self.folder
+        #Обновляем метку пути
+        self.lbl_network_path.config(text=self.network_path)
+        #Очищаем дерево
+        for item in self.tree_left.get_children():
+            self.tree_left.delete(item)
+        #Создаем и заполняем дерево заново
+        self.create_left_tree()
+        self.populate_node()
+        self.create_buttons()
+        
     # Создаем дерево таблицу
     def create_right_tree(self):
         columns = ("#1", "#2", "#3")
@@ -102,7 +131,7 @@ class App(tk.Tk):
         self.tree.column("#3", minwidth=80, stretch=0, width=80, anchor="e")
 
         # Добовляем скроллдаун
-        self.ysb = ttk.Scrollbar(self.group_2, orient=tk.VERTICAL,command=self.tree.yview)
+        self.ysb = ttk.Scrollbar(self.group_2, orient=tk.VERTICAL, command=self.tree.yview)
 
         self.tree.configure(yscroll=self.ysb.set)  # Присоединяем скроллдаун к дереву файлов
 
@@ -135,7 +164,7 @@ class App(tk.Tk):
         self.tree_left.configure(yscroll=self.ysb_left.set)  # Присоединяем скроллдаун к дереву файлов
 
         self.ysb_left.place(x=515, y=0, relheight=1) # Задаём расположение скролла
-        self.tree_left.bind("<Double-1>",lambda event: self.OnDoubleClick())
+        self.tree_left.bind("<Double-1>",lambda event: self.OnDoubleClick_tree_left())
 
     # Функция, которая изначально заполняет дерево записями из указанной директории
     def populate_node(self, parent, abspath):
@@ -155,45 +184,15 @@ class App(tk.Tk):
             self.tree_left.delete(children) # Удаляем пустые записи
             self.populate_node(item, self.abspath) # Добавляем существующие вложенные файлы
 
-    # Функция, которая добавляет выбранные данные в список на копирование
-    def add_files_to_tree(self):
-        files = [] #список файлов для добавления
-        slct_files =[] #список всех выбранных файлов
-        for item_iid in self.tree_left.selection():
-         value = self.tree_left.item(item_iid)
-         slct_files.append (value['text']) #записываем имена выделенных файлов в список
-           # r=корень, d=папки, f = файлы
-           #если выделен файл
-         for r, d, f in os.walk(self.network_path):
-              for file in f:
-                  if file in slct_files: #выбираем только выделенные файлы
-                     files.append(os.path.join(r, file))#записываем пути всех файлов в сетевой папке в список
-                     for f in files:
-                        self.read_files_attributes(f)
-            #если выделена папка
-              for folder in d: 
-                  if folder in slct_files: #выбираем только выделенную папку
-                      fpath = os.path.join(r, folder) #задаем путь к выделенной папке
-                      for r, d, f in os.walk(fpath):
-                          for file in f:
-                                files.append(os.path.join(r, file))#записываем пути всех файлов в сетевой папке в список   
-                                for f in files:
-                                  self.read_files_attributes(f)
-    
-    
-# Функция, которая добавляет все данные в список на копирование
-    def add_all_files_to_tree(self):
-     files = [] #список всех файлов
-     # r=корень, d=папки, f = файлы
-     for r, d, f in os.walk(self.network_path): 
-          for file in f:
-             files.append(os.path.join(r, file))#записываем пути всех файлов в сетевой папке в список
-     for f in files:
-          self.read_files_attributes(f)
-    
-       
+    def OnDoubleClick_tree_left(self):
+        item_iid = self.tree_left.selection()[0]
+        parent_iid = self.tree_left.parent(item_iid)
+        paren_iid_2 = self.tree_left.parent(parent_iid)
+        self.micromine_path = os.path.join(self.network_path, self.tree_left.item(paren_iid_2)['text'], self.tree_left.item(parent_iid)['text'], self.tree_left.item(item_iid)['text'])
+        self.read_files_attributes(self.micromine_path)
+
     def read_files_attributes(self, path_file):
-        list_tree =[]
+        self.list_tree = []
         self.path_file = path_file
         filename, file_extension = os.path.splitext(self.path_file) # Находим расширение файл
         if file_extension in [".STR", ".DAT", ".tridb"]:
@@ -201,27 +200,52 @@ class App(tk.Tk):
             timestamp_date = datetime.datetime.fromtimestamp(time_stats).strftime('%Y-%m-%d')  # Преобразуем дату в нужный формат
             size_stats = os.stat(self.path_file).st_size  # Получаем статистику по каждому файлу (размер)
             size_file = str(round(size_stats / 1000)) + " КБ"  # Преобразуем размер в килобайт
+            self.ful_path_tree_dict[self.path_file.split("\\")[-1]] = self.path_file # Добавляем в словарь путь(ключ) и имя файла(значение)
             for item in self.tree.get_children(""):
                 file_tree = self.tree.set(item, "#1")
-                list_tree.append(file_tree)
-            if self.path_file.split("\\")[-1] not in list_tree:
-                self.tree.insert("", tk.END, values=(self.path_file.split("\\")[-1], timestamp_date, size_file))  # записываем атрибуты в Treeview
-            else:
-                print("Файл уже добавлен!")
+                self.list_tree.append(file_tree)
+            for key in self.ful_path_tree_dict:
+                if key not in self.list_tree:
+                    self.tree.insert("", tk.END, values=(key, timestamp_date, size_file))   # Записываем атрибуты в Treeview
+
         self.treeview_sort_column()
 
+    # Функция, которая добавляет выбранные данные в список на копирование
+    def Add_files_to_tree(self):
+        files = [] # список файлов для добавления
+        slct_files =[] # список всех выбранных файлов
+        for item_iid in self.tree_left.selection():
+         value = self.tree_left.item(item_iid)
+         slct_files.append (value['text']) # записываем имена выделенных файлов в список
+           # r=корень, d=папки, f = файлы
+           # если выделен файл
+         for r, d, f in os.walk(self.network_path):
+              for file in f:
+                  if file in slct_files: # выбираем только выделенные файлы
+                     files.append(os.path.join(r, file))# записываем пути всех файлов в сетевой папке в список
+                     for f in files:
+                        self.read_files_attributes(f)
+            # если выделена папка
+              for folder in d:
+                  if folder in slct_files: # выбираем только выделенную папку
+                      fpath = os.path.join(r, folder) #  путь к выделенной папке
+                      for r, d, f in os.walk(fpath):
+                          for file in f:
+                                files.append(os.path.join(r, file))# записываем пути всех файлов в сетевой папке в список
+                                for f in files:
+                                  self.read_files_attributes(f)
 
-    """def read_all_files(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        file_directory = os.listdir(self.network_path)  # Определяем все имена файлов по указаному пути
+    # Функция, которая добавляет все данные в список на копирование
+    def Add_All_files_to_tree(self):
+        files = [] # список всех файлов
+        # r=корень, d=папки, f = файлы
+        for r, d, f in os.walk(self.network_path):
+          for file in f:
+             files.append(os.path.join(r, file)) # записываем пути всех файлов в сетевой папке в список
+        for f in files:
+          self.read_files_attributes(f)
 
-        # Достаем информацию из файлов в указанной директории и записываем в словарь files_stats
-        for file in file_directory:
-            path_file = os.path.join(self.network_path, file)  # Полный путь к файлам
-            self.read_files_attributes(self, path_file)"""
-
-    #Функция сортировки Treeview по расширению
+    # Функция сортировки Treeview по расширению
     def treeview_sort_column(self):
         rows = [(self.tree.set(item, "#1"), item) for item in self.tree.get_children('')]
         i = sorted(rows, key=lambda x: x[0].split(".")[-1])
@@ -230,37 +254,52 @@ class App(tk.Tk):
 
     # Функция полной очистки Treeview
     def del_func_all_data(self):
+        self.ful_path_tree_dict = {}
         for item in self.tree.get_children():
             self.tree.delete(item)
 
     # Функция удаления по выбору
     def del_func(self):
-            for item in self.tree.selection():
-                self.tree.delete(item)
+        for item in self.tree.selection():
+            file_del = self.tree.set(item, "#1")
+            self.ful_path_tree_dict.pop(file_del)
 
+            self.tree.delete(item)
 
 
     # Функция копирования данных из сети
     def copy_files_to_project(self):
-        self.path_from = r"C:\Cетевая папка"
-        self.path_project = r"D:\ПРОЕКТЫ\+++GV_GOLD+++\КЛИЕНТ_ММ_УГАХАН"
         if self.var.get() == 1:
             shutil.rmtree(self.path_project)  # Удаляем всю директорию из проекта
-            shutil.copytree(self.path_from, self.path_project,
-                            ignore=shutil.ignore_patterns(".*"), dirs_exist_ok=True)
-
+            shutil.copytree(self.network_path, self.path_project,
+                            ignore=self.ignor_copy(), dirs_exist_ok=True)
             print("Данные успешно скопированы!")
+
         else:
             print("Данные не загружены!")
 
 
+    #Функция игнора файлов
+    def ignor_copy(self):
+        def _ignore(path, names):
+            ignored_names = []
+
+            for name in names:
+                if name in self.ful_path_tree_dict.keys():
+                    ignored_names.append(name)
+            return set(ignored_names)
+
+        return _ignore
+
+
+
+
+
+
+
 if __name__ == "__main__":
     app = App()
-    app.create_main_window()
-    app.create_buttons()
-    app.create_right_tree()
-    app.create_left_tree()
     app.mainloop()
-
+    app.ignor_copy()
 
 
