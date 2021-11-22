@@ -1,6 +1,13 @@
 ﻿import tkinter as tk
+from tkinter import filedialog
 import tkinter.ttk as ttk
-import os
+import os, sys
+from pathlib import Path # библиотек
+# Создание переменной root_path типа Path,
+# в которой содержится абсолютный путь до папки с main.py
+root_path = Path(os.path.dirname(os.path.realpath(__file__)))
+# Добавляем созданную нами папку в список библиотечных папок
+sys.path.insert(0, str(root_path))
 import datetime
 from idlelib.tooltip import Hovertip
 import shutil
@@ -36,7 +43,7 @@ class App(tk.Tk):
 
         self.configure(bg=self.mycolor_1)  # меняем фон программы
         # Меняем иконку у программы
-        path_icon = os.path.abspath("icon.ico")
+        path_icon = str(root_path / "icon.ico")
         self.iconbitmap(path_icon)
 
         # Создаем группы
@@ -52,42 +59,64 @@ class App(tk.Tk):
     # Создаем кнопки
     def create_buttons(self):
         # Создаем кнопки со стрелками впарво и влево
-        self.img_right = tk.PhotoImage(file="right.png")
+        self.img_right = tk.PhotoImage(file=str(root_path /"right.png"))
         self.btn_right = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right,
                                    command=self.Add_All_files_to_tree)
 
         self.btn_right.place(x=575, y=220)
-        self.img_right_litle = tk.PhotoImage(file="right_litle.png")
+        self.img_right_litle = tk.PhotoImage(file=str(root_path /"right_litle.png"))
         self.btn_right_litle = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_right_litle,
                                          command=self.Add_files_to_tree)
         self.btn_right_litle.place(x=575, y=280)
 
 
-        self.img_left = tk.PhotoImage(file="left.png")
+        self.img_left = tk.PhotoImage(file=str(root_path /"left.png"))
         self.btn_left = tk.Button(self, height=40, width=50,bg=self.mycolor_1, image=self.img_left,
                                   command=self.del_func_all_data)
         self.btn_left.place(x = 575, y =400)
-        self.img_left_litle = tk.PhotoImage(file="left litle.png")
+        self.img_left_litle = tk.PhotoImage(file=str(root_path /"left litle.png"))
         self.btn_left_litle = tk.Button(self, height=40, width=50, bg=self.mycolor_1, image=self.img_left_litle,
                                         command=self.del_func)
         self.btn_left_litle.place(x=575, y=460)
 
         # Создаем кнопку загрузки данных в Майкромайн
 
-        self.img_Download = tk.PhotoImage(file="download.png")
+        self.img_Download = tk.PhotoImage(file=str(root_path /"download.png"))
         self.btn_Download = tk.Button(self.group_toolbar, height=60, width=70, bg=self.mycolor_1, image=self.img_Download,
                                       command=self.copy_files_to_project)
         self.btn_Download.place(x=1090, y=5)
         Hovertip(self.btn_Download, "Функция загрузки данных в Майкромайн.", hover_delay=300)
 
-        # Создаем кнопку загрузки данных в Майкромайн
+        # Создаем кнопу выбора сетевой папки
+        
+        #кнопка
+        self.img_folder = tk.PhotoImage(file=str(root_path /"folder.png"))
+        self.img_folder_small = self.img_folder.subsample(2,2)
+        self.btn_network_path = tk.Button( text = "Открыть...", width = 80, bg=self.mycolor_1, height= 13, image= self.img_folder_small, compound= "left",
+                                    command=self.select_network_folder)
+        self.btn_network_path.place(x=245, y=50)
+        #строка пути
+        self.lbl_network_path = tk.Label(width= 30, text = self.network_path, anchor= tk.W, justify="left")
+        self.lbl_network_path.place(x=20, y=50)
+        #заголовок
+        self.label_network_title = tk.Label(text= "Сетевая папка:" , bg=self.mycolor_2)
+        self.label_network_title.place(x=18, y=25)
 
-        self.img_download_BM = tk.PhotoImage(file="download_BM.png")
-        self.btn_download_BM = tk.Button(self.group_toolbar, height=60, width=70, bg=self.mycolor_1,
-                                      image=self.img_download_BM, text = "Загрузка БМ")
-        self.btn_download_BM.place(x=10, y=5)
-        Hovertip(self.btn_download_BM, "Функция загрузки БМ в сеть.", hover_delay=300)
-
+    #Выбираем сетевую папку
+    def select_network_folder(self):
+        #Открываем окно выбора папки
+        self.folder = filedialog.askdirectory()
+        self.network_path = self.folder
+        #Обновляем метку пути
+        self.lbl_network_path.config(text=self.network_path)
+        #Очищаем дерево
+        for item in self.tree_left.get_children():
+            self.tree_left.delete(item)
+        #Создаем и заполняем дерево заново
+        self.create_left_tree()
+        self.populate_node()
+        self.create_buttons()
+        
     # Создаем дерево таблицу
     def create_right_tree(self):
         columns = ("#1", "#2", "#3")
@@ -274,9 +303,8 @@ class App(tk.Tk):
 
 
 
-if __name__ == "__main__":
-    app = App()
-    app.mainloop()
-    app.ignor_copy()
+app = App()
+app.mainloop()
+app.ignor_copy()
 
 
