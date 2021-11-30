@@ -11,7 +11,8 @@ sys.path.insert(0, str(root_path))
 import datetime
 from idlelib.tooltip import Hovertip
 import shutil
-
+import MMpy
+from copy_data_to_project import copy_data_to_project
 
 class App(tk.Tk):
     def __init__(self):
@@ -21,13 +22,17 @@ class App(tk.Tk):
         self.mycolor_2 = '#%02x%02x%02x' % (169, 176, 198)  # Панель инструментов
         self.mycolor_3 = '#%02x%02x%02x' % (253, 253, 254)  # Белый
         self.mycolor_4 = '#%02x%02x%02x' % (87, 53, 114)  # Темно фиалетовый
-        self.network_path = r"C:\Cетевая папка"  # Указываем путь проекта
-        self.path_project = r"C:\LearnPyton\file manager\Cетевая папка"
+        self.network_path = r"C:\Cетевая папка"  # Указываем путь к сетевой папке
+        self.path_project = MMpy.Project.path()
+        print(self.path_project)
         self.ful_path_tree_dict = {}
         self.create_main_window()
         self.create_buttons()
         self.create_right_tree()
         self.create_left_tree()
+
+
+
 
     # Главное окно
     def create_main_window(self):
@@ -275,31 +280,19 @@ class App(tk.Tk):
 
     # Функция копирования данных из сети
     def copy_files_to_project(self):
-        if self.var.get() == 1:
-            shutil.rmtree(self.path_project)  # Удаляем всю директорию из проекта
-            shutil.copytree(self.network_path, self.path_project,
-                            ignore=self.ignor_copy(), dirs_exist_ok=True)
-            print("Данные успешно скопированы!")
-
-        else:
-            print("Данные не загружены!")
-
+        copy_data_to_project(self.path_project + "Сетевая папка",self.network_path, bool(self.var.get()), self.ignor_copy())
 
     #Функция игнора файлов
     def ignor_copy(self):
-        def _ignore(path, names):
+        def _ignore(folder, files):
             ignored_names = []
-
-            for name in names:
-                if name in self.ful_path_tree_dict.keys():
-                    ignored_names.append(name)
-            return set(ignored_names)
-
+            for file in files:
+                full_path = os.path.join(folder, file)
+                if not os.path.isdir(full_path):
+                    if file not in self.ful_path_tree_dict.keys():
+                        ignored_names.append(file)
+            return ignored_names
         return _ignore
-
-
-
-
 
 
 
