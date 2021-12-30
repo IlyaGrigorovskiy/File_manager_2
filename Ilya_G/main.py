@@ -12,8 +12,8 @@ import datetime
 from idlelib.tooltip import Hovertip
 import shutil
 import MMpy
-from copy_data_to_project import copy_data_to_project
-
+from copy_data_to_project import *
+from widgets_click import get_form_info
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -24,12 +24,13 @@ class App(tk.Tk):
         self.mycolor_4 = '#%02x%02x%02x' % (87, 53, 114)  # Темно фиалетовый
         self.network_path = r"C:\Cетевая папка"  # Указываем путь к сетевой папке
         self.path_project = MMpy.Project.path()
-        print(self.path_project)
         self.ful_path_tree_dict = {}
         self.create_main_window()
         self.create_buttons()
         self.create_right_tree()
         self.create_left_tree()
+
+        get_form_info(507)
 
 
 
@@ -41,9 +42,9 @@ class App(tk.Tk):
         h = self.winfo_screenheight()  # определяем высоту монитора
         w = w // 2  # середина экрана
         h = h // 2
-        w = w - 600  # смещение от середины, иначе в центре экрана окажется верхний левый угол окна, а не его середина
+        w = w - 800  # смещение от середины, иначе в центре экрана окажется верхний левый угол окна, а не его середина
         h = h - 363
-        self.geometry('1200x725+{}+{}'.format(w, h))  # пределяем геометрию и положение основного окна программы
+        self.geometry('1400x725+{}+{}'.format(w, h))  # пределяем геометрию и положение основного окна программы
         self.resizable(False, False)  # запретит изменение размеров основного окна
 
         self.configure(bg=self.mycolor_1)  # меняем фон программы
@@ -52,7 +53,7 @@ class App(tk.Tk):
         self.iconbitmap(path_icon)
 
         # Создаем группы
-        self.group_toolbar = tk.LabelFrame(self, height=80, width=1180, bg=self.mycolor_2)
+        self.group_toolbar = tk.LabelFrame(self, height=80, width=1380, bg=self.mycolor_2)
         self.group_toolbar.place(x=10, y=10)
 
         self.group_1 = tk.LabelFrame(self, height=590, width=540, bg=self.mycolor_3)
@@ -89,39 +90,62 @@ class App(tk.Tk):
         self.img_Download = tk.PhotoImage(file=str(root_path /"download.png"))
         self.btn_Download = tk.Button(self.group_toolbar, height=60, width=70, bg=self.mycolor_1, image=self.img_Download,
                                       command=self.copy_files_to_project)
-        self.btn_Download.place(x=1090, y=5)
+        self.btn_Download.place(x=1290, y=5)
         Hovertip(self.btn_Download, "Функция загрузки данных в Майкромайн.", hover_delay=300)
 
         # Создаем кнопу выбора сетевой папки
-        
+
         #кнопка
         self.img_folder = tk.PhotoImage(file=str(root_path /"folder.png"))
         self.img_folder_small = self.img_folder.subsample(2,2)
-        self.btn_network_path = tk.Button( text = "Открыть...", width = 80, bg=self.mycolor_1, height= 13, image= self.img_folder_small, compound= "left",
-                                    command=self.select_network_folder)
-        self.btn_network_path.place(x=245, y=50)
-        #строка пути
-        self.lbl_network_path = tk.Label(width= 30, text = self.network_path, anchor= tk.W, justify="left")
-        self.lbl_network_path.place(x=20, y=50)
-        #заголовок
-        self.label_network_title = tk.Label(text= "Сетевая папка:" , bg=self.mycolor_2)
-        self.label_network_title.place(x=18, y=25)
+
+        self.btn_network_path = tk.Button(self, text = " Выбрать...", width = 80, bg="white",bd = 0, height= 15, image= self.img_folder_small, compound= "left", command=self.select_network_folder)
+        # меняем цвет кнопки при наведении курсора мыши
+        self.btn_network_path.bind("<Enter>", lambda e: self.btn_network_path.config(bg='#ADD8E6'))
+        self.btn_network_path.bind("<Leave>", lambda e: self.btn_network_path.config(bg="white"))
+        self.btn_network_path.place(x=434, y=105)
+
+        #Меню выбора форм для загрузки по умолчанию
+        self.label_head = tk.Label(self,text="Выбор форм для загрузки данных", bg=self.mycolor_1,font= ('Calibri', 9,'bold'))
+        self.label_head.place(x=1200, y=100)
+
+        self.label_BM = tk.Label(self,text="Блочные модели:", bg=self.mycolor_1)
+        self.label_BM.place(x=1200, y=120)
+        self.combobox_BM = ttk.Combobox(self,width=25, values = get_form_info(507))
+        self.combobox_BM.current(0)
+        self.combobox_BM.place(x=1200, y=140)
+
+        self.label_point = tk.Label(self,text="Точки:", bg=self.mycolor_1)
+        self.label_point.place(x=1200, y=161)
+        self.combobox_point = ttk.Combobox(self,width=25, values = get_form_info(437))
+        self.combobox_point.current(0)
+        self.combobox_point.place(x=1200, y=180)
+
+        self.label_line = tk.Label(self,text="Линии:", bg=self.mycolor_1)
+        self.label_line.place(x=1200, y=201)
+        self.combobox_line = ttk.Combobox(self,width=25, values = get_form_info(486))
+        self.combobox_line.current(0)
+        self.combobox_line.place(x=1200, y=220)
+
+        self.label_wr = tk.Label(self,text="Каркасы:", bg=self.mycolor_1)
+        self.label_wr.place(x=1200, y=241)
+        self.combobox_wr = ttk.Combobox(self,width=25, values = get_form_info(506))
+        self.combobox_wr.current(0)
+        self.combobox_wr.place(x=1200, y=260)
 
     #Выбираем сетевую папку
     def select_network_folder(self):
         #Открываем окно выбора папки
         self.folder = filedialog.askdirectory()
-        self.network_path = self.folder
-        #Обновляем метку пути
-        self.lbl_network_path.config(text=self.network_path)
-        #Очищаем дерево
-        for item in self.tree_left.get_children():
-            self.tree_left.delete(item)
-        #Создаем и заполняем дерево заново
-        self.create_left_tree()
-        self.populate_node()
-        self.create_buttons()
-        
+        if self.folder != "":
+            self.network_path = self.folder
+            #Очищаем дерево
+            for item in self.tree_left.get_children():
+                self.tree_left.delete(item)
+            #Создаем и заполняем дерево заново
+            self.create_left_tree()
+
+
     # Создаем дерево таблицу
     def create_right_tree(self):
         columns = ("#1", "#2", "#3")
@@ -159,11 +183,15 @@ class App(tk.Tk):
 
     def create_left_tree(self):
 
-        self.abspath = os.path.abspath(self.network_path) # Создаём переменную, которая возвращает нормализованный абсолютный путь
+        self.abspath = self.network_path #Создаём переменную, которая возвращает нормализованный абсолютный путь
         self.nodes = {} # Создаём словарь
         self.tree_left = ttk.Treeview(self.group_1, height=28) # Указываем высоту окна, в котором будут папки и файлы
         self.tree_left.place(x=0, y=0) # Задаём точку отсчёта для местоположения таблицы
-        self.tree_left.heading("#0", text=self.abspath, anchor=tk.W) # Задаём местоположение заголовка, по умолчанию указывается путь
+
+
+        self.tree_left.heading("#0", text=self.abspath, anchor=tk.W, command=self.select_network_folder) # Задаём местоположение заголовка, по умолчанию указывается путь
+        
+        
         self.tree_left.column("#0", width=510) # Указываем ширину окна, в котором будут папки и файлы
 
         self.tree_left.bind("<<TreeviewOpen>>", self.open_node) # Вызываем функцию, которая позволяет после нажатия плюсика определить вложеные данные
@@ -181,8 +209,12 @@ class App(tk.Tk):
     def populate_node(self, parent, abspath):
         for entry in os.listdir(abspath): # Отображаются все названия директорий внутри первоначальной папки
             entry_path = os.path.join(abspath, entry) # Задаётся абсолютный путь
-            node = self.tree_left.insert(parent, tk.END, text=entry, open=False) # Задаём переменную, которая настраивает, чтобы папки были закрыты (отображался плюсик для раскрытия)
+            extension = entry_path.split('.')[-1]
+            if extension in ["STR", "DAT", "tridb"]:
+                node = self.tree_left.insert(parent, tk.END, text=entry, open=False) # Задаём переменную, которая настраивает, чтобы папки были закрыты (отображался плюсик для раскрытия)
+
             if os.path.isdir(entry_path): # Проверяется, является ли путь директорией
+                node = self.tree_left.insert(parent, tk.END, text=entry,open=False)  # Задаём переменную, которая настраивает, чтобы папки были закрыты (отображался плюсик для раскрытия)
                 self.nodes[node] = entry_path # Если абсолютный путь записи указывает на директорию, то добавляется связь для узла и пути в атрибут
                 self.tree_left.insert(node, tk.END)
 
@@ -190,10 +222,13 @@ class App(tk.Tk):
     def open_node(self, event):
         item = self.tree_left.focus() # Метод, который раскрывает выбранную директорию
         self.abspath = self.nodes.pop(item, False) # Возвращаем параметр, в качестве значения по умолчанию, если узел не существует, чтобы не возникала ошибка KeyError
+        
         if self.abspath:
             children = self.tree_left.get_children(item) # Если записи являются директориями, то раскрываются поддиректории
             self.tree_left.delete(children) # Удаляем пустые записи
+
             self.populate_node(item, self.abspath) # Добавляем существующие вложенные файлы
+
 
     def OnDoubleClick_tree_left(self):
         item_iid = self.tree_left.selection()[0]
@@ -278,9 +313,13 @@ class App(tk.Tk):
             self.tree.delete(item)
 
 
-    # Функция копирования данных из сети
+
+
+    # Функция копирования и загрузки данных  из сети
     def copy_files_to_project(self):
         copy_data_to_project(self.path_project + "Сетевая папка",self.network_path, bool(self.var.get()), self.ignor_copy())
+        #for key in self.ful_path_tree_dict:
+            #downloаd_data_to_мм(self.ful_path_tree_dict[key])
 
     #Функция игнора файлов
     def ignor_copy(self):
